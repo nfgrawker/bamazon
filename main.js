@@ -122,8 +122,56 @@ function check(){
             })
         });
 }
+function manager(){
+    inquirer.prompt([{
+        name : "password",
+        type : "input",
+        message : "input manager password please",
 
-
+    }]).then(password=>{
+        if (password.password == "manager1"){
+            inquirer.prompt([{
+                name : "userMenu",
+                    type : "list",
+                message : "What do you want to do?",
+                choices : ["view all products", "check all low stock","add to inventory","add new product", "quit"]
+            }]).then(answers=>{
+                if (answers.userMenu === "view all products"){
+                    viewAll()
+                }
+                else if (answers.userMenu === "check all low stock"){
+                    check()
+                }
+                else if (answer.userMenu === "add to inventory"){
+                    addToInventory()
+                }
+                else if (answer.userMenu === "add new product"){
+                    addNewProduct()
+                }
+                else if(answers.userMenu === "quit"){
+                    connection.end()
+                }
+            })
+        }
+        else{
+            console.log("Invalid password")
+        }
+    })
+}
+function viewAll(){
+    connection.query("select * from products",function(err, results, fields){
+        if (err) console.log(error);
+        else {
+            for (let row in results){
+                console.log("Name : " + results[row].product_name);
+                console.log("Amount in Stock : " + results[row].stock_quantity);
+                console.log("Department : " + results[row].department_name);
+                console.log("Price : $" + results[row].price);
+                console.log("-------------------")
+            }
+        }
+    })
+}
 
 
 
