@@ -6,7 +6,9 @@ var currentAmount = 0;
 var currentPrice = 0;
 var currentItem = "";
 var currentCategory = "";
-
+var password = false
+let amount = ""
+let itemID = ""
 
 // to set up a connection
 var connection = mysql.createConnection({
@@ -125,7 +127,7 @@ function check(){
 function manager(){
     inquirer.prompt([{
         name : "password",
-        type : "input",
+        type : "password",
         message : "input manager password please",
 
     }]).then(password=>{
@@ -140,12 +142,12 @@ function manager(){
                     viewAll()
                 }
                 else if (answers.userMenu === "check all low stock"){
-                    check()
+                    checkLow()
                 }
-                else if (answer.userMenu === "add to inventory"){
+                else if (answers.userMenu === "add to inventory"){
                     addToInventory()
                 }
-                else if (answer.userMenu === "add new product"){
+                else if (answers.userMenu === "add new product"){
                     addNewProduct()
                 }
                 else if(answers.userMenu === "quit"){
@@ -170,11 +172,48 @@ function viewAll(){
                 console.log("-------------------")
             }
         }
+        manager()
     })
 }
+function checkLow(){
+  connection.query("select * from products",function(err, results, fields){
+      if (err) console.log(error);
+      else {
+          for (let row in results){
+            if (results[row].stock_quantity < 100){
+              console.log("Low stock alert!!!")
+              console.log("Product name : "+ results[row].product_name)
+              console.log("Stock remaining : "+ results[row].stock_quantity)
+              console.log("--------------------")
+            }
+          }
+      }
+      manager()
+  })
 
+}
 
-
-
+function addToInventory(){
+  inquirer.prompt([{
+    name : "itemID",
+    type : "input",
+    message : "What is the id of the product you want to add?"
+  },{
+    name : "amount",
+    type : "input",
+    message : "How many are you adding to inventory?"
+}]).then(answers=>{
+    amount = parseInt(answers.amount)
+    itemID = answers.itemID
+    connection.query("select * from products where item_id = " + answers.itemID, function(err, results, fields){
+      if (err) console.log(err);
+      currentAmount = results[0].stock_quantity
+      connection.query("update products set stock_quantity ="+(amount + currentAmount)+" where item_id = "+itemID, function(err, results, fields){
+        if (err) console.log(err);
+      })
+    })
+  })
+  manager()
+}
 initialConnection()
 inititalizeInquirer()
