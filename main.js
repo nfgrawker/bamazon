@@ -6,9 +6,9 @@ var currentAmount = 0;
 var currentPrice = 0;
 var currentItem = "";
 var currentCategory = "";
-var password = false
-let amount = ""
-let itemID = ""
+var password = false;
+let amount = "";
+let itemID = "";
 
 // to set up a connection
 var connection = mysql.createConnection({
@@ -128,13 +128,12 @@ function manager(){
     inquirer.prompt([{
         name : "password",
         type : "password",
-        message : "input manager password please",
-
+        message : "input manager password please"
     }]).then(password=>{
-        if (password.password == "manager1"){
+        if (password.password === "manager1"){
             inquirer.prompt([{
                 name : "userMenu",
-                    type : "list",
+                type : "list",
                 message : "What do you want to do?",
                 choices : ["view all products", "check all low stock","add to inventory","add new product", "quit"]
             }]).then(answers=>{
@@ -181,9 +180,9 @@ function checkLow(){
       else {
           for (let row in results){
             if (results[row].stock_quantity < 100){
-              console.log("Low stock alert!!!")
-              console.log("Product name : "+ results[row].product_name)
-              console.log("Stock remaining : "+ results[row].stock_quantity)
+              console.log("Low stock alert!!!");
+              console.log("Product name : "+ results[row].product_name);
+              console.log("Stock remaining : "+ results[row].stock_quantity);
               console.log("--------------------")
             }
           }
@@ -195,25 +194,52 @@ function checkLow(){
 
 function addToInventory(){
   inquirer.prompt([{
-    name : "itemID",
-    type : "input",
-    message : "What is the id of the product you want to add?"
-  },{
-    name : "amount",
-    type : "input",
-    message : "How many are you adding to inventory?"
-}]).then(answers=>{
-    amount = parseInt(answers.amount)
-    itemID = answers.itemID
-    connection.query("select * from products where item_id = " + answers.itemID, function(err, results, fields){
-      if (err) console.log(err);
-      currentAmount = results[0].stock_quantity
-      connection.query("update products set stock_quantity ="+(amount + currentAmount)+" where item_id = "+itemID, function(err, results, fields){
+        name : "itemID",
+        type : "input",
+        message : "What is the id of the product you want to add?"
+    },{
+        name : "amount",
+        type : "input",
+        message : "How many are you adding to inventory?"
+    }]).then(answers=>{
+        amount = parseInt(answers.amount);
+        itemID = answers.itemID;
+        connection.query("select * from products where item_id = " + answers.itemID, function(err, results, fields){
         if (err) console.log(err);
+        currentAmount = results[0].stock_quantity;
+        connection.query("update products set stock_quantity ="+(amount + currentAmount)+" where item_id = "+itemID, function(err, results, fields){
+        if (err) console.log(err);
+        manager()
       })
     })
-  })
-  manager()
+  });
 }
-initialConnection()
-inititalizeInquirer()
+
+function addNewProduct(){
+  inquirer.prompt([{
+      name : "name",
+      type : "input",
+      message : "What is the name of the product you want to add?"
+    },{
+      name : "price",
+      type : "input",
+      message : "What is the price of the item?"
+    },{
+      name : "department",
+      type : "input",
+      message : "What department will this product be under?"
+    },{
+      name : "amount",
+      type : "input",
+      message : "How many are you adding to inventory?"
+  }]).then(answers=>{
+      connection.query("insert into products (product_name, department_name, price, stock_quantity) values ('"+answers.name+"','"+answers.department+"',"+answers.price+","+answers.amount+");",function(err,results,fields){
+        if(err) console.log(err);
+      })
+      manager()
+    })
+}
+
+
+initialConnection();
+inititalizeInquirer();
