@@ -204,13 +204,9 @@ function addToInventory(){
     }]).then(answers=>{
         amount = parseInt(answers.amount);
         itemID = answers.itemID;
-        connection.query("select * from products where item_id = " + answers.itemID, function(err, results, fields){
-        if (err) console.log(err);
-        currentAmount = results[0].stock_quantity;
-        connection.query("update products set stock_quantity ="+(amount + currentAmount)+" where item_id = "+itemID, function(err, results, fields){
+        connection.query("update products set stock_quantity = stock_quantity + "+amount+ " where item_id = "+itemID+";", function(err, results, fields){
         if (err) console.log(err);
         manager()
-      })
     })
   });
 }
