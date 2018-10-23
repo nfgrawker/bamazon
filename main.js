@@ -1,6 +1,6 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
-
+const {table} = require('table')
 //variable to be used later
 var currentAmount = 0;
 var currentPrice = 0;
@@ -9,6 +9,7 @@ var currentCategory = "";
 var password = false;
 let amount = "";
 let itemID = "";
+let data, output;
 
 // to set up a connection
 var connection = mysql.createConnection({
@@ -91,7 +92,14 @@ function bid(){
                   console.log("Purchase successful. Your account has been charged $" + (Math.round((currentPrice * answers.amount) * 100) / 100) +" .");
                   console.log("Your order will be shipped shortly!");
                   console.log("-------------------");
-                  connection.query("update products set stock_quantity ="+(currentAmount - answers.amount)+" where item_id = 1")
+                  connection.query("update products set stock_quantity = stock_quantity - "+answers.amount+" where item_id = "+answers.itemID, function(err, results,fields){
+                    if (err) console.log(err);
+                  })
+                  connection.query("update products set product_sales = product_sales + " +answers.amount+" where item_id = "+answers.itemID, function(err, results, fields){
+                    if (err) console.log(err);
+                    console.log("yep")
+                  })
+
               }
             user()
           }
@@ -156,6 +164,7 @@ function manager(){
         }
         else{
             console.log("Invalid password")
+            connection.end()
         }
     })
 }
@@ -165,6 +174,7 @@ function viewAll(){
         else {
             for (let row in results){
                 console.log("Name : " + results[row].product_name);
+                console.log("Item Id : " + results[row].item_id )
                 console.log("Amount in Stock : " + results[row].stock_quantity);
                 console.log("Department : " + results[row].department_name);
                 console.log("Price : $" + results[row].price);
@@ -181,6 +191,7 @@ function checkLow(){
           for (let row in results){
             if (results[row].stock_quantity < 100){
               console.log("Low stock alert!!!");
+              console.log("Item ID : " + results[row].item_id)
               console.log("Product name : "+ results[row].product_name);
               console.log("Stock remaining : "+ results[row].stock_quantity);
               console.log("--------------------")
@@ -236,6 +247,61 @@ function addNewProduct(){
     })
 }
 
+function supervisor(){
+    inquirer.prompt([{
+        name : "password",
+        type : "password",
+        message : "input supervisor1 password please"
+    }]).then(password=>{
+        if (password.password === "supervisor1"){
+            inquirer.prompt([{
+                name : "userMenu",
+                type : "list",
+                message : "What do you want to do?",
+                choices : ["Add a department", "Create profit/loss table","add to inventory","quit"]
+            }]).then(answers=>{
+                if (answers.userMenu === "Add a department"){
+                    addDepartment()
+                }
+                else if (answers.userMenu === "Create profit/loss table"){
+                    createTable()
+                }
+                else if(answers.userMenu === "quit"){
+                    connection.end()
+                }
+            })
+        }
+        else{
+            console.log("Invalid password")
+            connection.end()
+        }
+    })
+}
 
+function addDepartment(){
+  inquirer.prompt([{
+    name : "department",
+    type : "input",
+    message : "What is the name of the department?"
+  },{
+    name : "overhead",
+    type : "input",
+    message : "How much is the overhead for the department?"
+
+  }]).then(answers =>{
+    connection.query("insert into departments (department_name, overhead_costs) values ('"+answers.department+"', "+answers.overhead+" );", function(err, results, fields){
+      if (err) console.log(err);
+      supervisor()
+    })
+  })
+}
+
+function createTable(){
+  connection.query("select departments.department_name, departments.overhead_costs, products.product_sales from bamazon.departments inner join products on  departments.department_name=products.department_name;",function(err, results, fields){
+    if(err) console.log(err);
+    console.log(results[0])
+
+  })
+}
 initialConnection();
 inititalizeInquirer();
