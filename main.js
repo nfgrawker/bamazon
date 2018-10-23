@@ -6,11 +6,11 @@ var currentAmount = 0;
 var currentPrice = 0;
 var currentItem = "";
 var currentCategory = "";
-var password = false;
+var mpassword = false;
+var spassword = false;
 let amount = "";
 let itemID = "";
-let data = [["Department", "Overhead Costs", "Total Sales", "Profit/Loss"]]
-
+let data = []
 // to set up a connection
 var connection = mysql.createConnection({
     host     : 'localhost',
@@ -29,7 +29,7 @@ function initialConnection(){
         console.log('connected as id ' + connection.threadId);
     });
 }
-
+// first inquirer to determine user
 function inititalizeInquirer(){
     inquirer.prompt([{
         name : "mode",
@@ -48,6 +48,7 @@ function inititalizeInquirer(){
         }
     });
 }
+// start of user functions
 function user(){
     inquirer.prompt([{
         name : "userMenu",
@@ -97,7 +98,6 @@ function bid(){
                   })
                   connection.query("update products set product_sales = product_sales + " +answers.amount+" where item_id = "+answers.itemID, function(err, results, fields){
                     if (err) console.log(err);
-                    console.log("yep")
                   })
 
               }
@@ -132,13 +132,16 @@ function check(){
             })
         });
 }
+// start of manager functions
 function manager(){
+  if (mpassword === false){
     inquirer.prompt([{
         name : "password",
         type : "password",
         message : "input manager password please"
     }]).then(password=>{
         if (password.password === "manager1"){
+            mpassword = true
             inquirer.prompt([{
                 name : "userMenu",
                 type : "list",
@@ -161,20 +164,48 @@ function manager(){
                     connection.end()
                 }
             })
+
         }
-        else{
-            console.log("Invalid password")
+        else {
+            console.log("Invalid password");
             connection.end()
         }
     })
+  }
+  else{
+    inquirer.prompt([{
+        name : "userMenu",
+        type : "list",
+        message : "What do you want to do?",
+        choices : ["view all products", "check all low stock","add to inventory","add new product", "quit"]
+    }]).then(answers=>{
+        if (answers.userMenu === "view all products"){
+            viewAll()
+        }
+        else if (answers.userMenu === "check all low stock"){
+            checkLow()
+        }
+        else if (answers.userMenu === "add to inventory"){
+            addToInventory()
+        }
+        else if (answers.userMenu === "add new product"){
+            addNewProduct()
+        }
+        else if(answers.userMenu === "quit"){
+            connection.end()
+        }
+    })
+  }
 }
+
+
 function viewAll(){
     connection.query("select * from products",function(err, results, fields){
         if (err) console.log(error);
         else {
             for (let row in results){
                 console.log("Name : " + results[row].product_name);
-                console.log("Item Id : " + results[row].item_id )
+                console.log("Item Id : " + results[row].item_id );
                 console.log("Amount in Stock : " + results[row].stock_quantity);
                 console.log("Department : " + results[row].department_name);
                 console.log("Price : $" + results[row].price);
@@ -191,7 +222,7 @@ function checkLow(){
           for (let row in results){
             if (results[row].stock_quantity < 100){
               console.log("Low stock alert!!!");
-              console.log("Item ID : " + results[row].item_id)
+              console.log("Item ID : " + results[row].item_id);
               console.log("Product name : "+ results[row].product_name);
               console.log("Stock remaining : "+ results[row].stock_quantity);
               console.log("--------------------")
@@ -200,7 +231,6 @@ function checkLow(){
       }
       manager()
   })
-
 }
 
 function addToInventory(){
@@ -246,8 +276,9 @@ function addNewProduct(){
       manager()
     })
 }
-
+// start of sup functions
 function supervisor(){
+  if (spassword === false){
     inquirer.prompt([{
         name : "password",
         type : "password",
@@ -269,13 +300,35 @@ function supervisor(){
                 else if(answers.userMenu === "quit"){
                     connection.end()
                 }
-            })
+            });
+            spassword = true
         }
         else{
-            console.log("Invalid password")
+            console.log("Invalid password");
             connection.end()
         }
     })
+  }
+  else{
+    inquirer.prompt([{
+        name : "userMenu",
+        type : "list",
+        message : "What do you want to do?",
+        choices : ["Add a department", "Create profit/loss table","add to inventory","quit"]
+    }]).then(answers=>{
+        if (answers.userMenu === "Add a department"){
+            addDepartment()
+        }
+        else if (answers.userMenu === "Create profit/loss table"){
+            createTable()
+        }
+        else if(answers.userMenu === "quit"){
+            connection.end()
+        }
+    })
+  }
+
+
 }
 
 function addDepartment(){
@@ -299,13 +352,16 @@ function addDepartment(){
 function createTable(){
   connection.query("select departments.department_name as department, departments.overhead_costs as overhead_costs, sum(products.product_sales*products.price) as total_sales from bamazon.departments inner join products on  departments.department_name=products.department_name group by departments.department_name;",function(err, results, fields){
     if(err) console.log(err);
+    data = [["Department", "Overhead Costs", "Total Sales", "Profit/Loss"]];
     for(i in results){
-      data.push([results[i].department, results[i].overhead_costs, results[i].total_sales, (results[i].total_sales-results[i].overhead_costs)])
+      data.push([results[i].department, results[i].overhead_costs, results[i].total_sales, (results[i].total_sales-results[i].overhead_costs).toFixed(2)])
     }
-    console.log(data)
-    let output = table(data)
-    console.log(output)
+    let output = table(data);
+    console.log(output);
+    supervisor()
   })
 }
+
+// intialize connection then inquirer
 initialConnection();
 inititalizeInquirer();
