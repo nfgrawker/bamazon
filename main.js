@@ -9,7 +9,7 @@ var currentCategory = "";
 var password = false;
 let amount = "";
 let itemID = "";
-let data, output;
+let data = [["Department", "Overhead Costs", "Total Sales", "Profit/Loss"]]
 
 // to set up a connection
 var connection = mysql.createConnection({
@@ -297,10 +297,14 @@ function addDepartment(){
 }
 
 function createTable(){
-  connection.query("select departments.department_name, departments.overhead_costs, products.product_sales from bamazon.departments inner join products on  departments.department_name=products.department_name;",function(err, results, fields){
+  connection.query("select departments.department_name as department, departments.overhead_costs as overhead_costs, sum(products.product_sales*products.price) as total_sales from bamazon.departments inner join products on  departments.department_name=products.department_name group by departments.department_name;",function(err, results, fields){
     if(err) console.log(err);
-    console.log(results[0])
-
+    for(i in results){
+      data.push([results[i].department, results[i].overhead_costs, results[i].total_sales, (results[i].total_sales-results[i].overhead_costs)])
+    }
+    console.log(data)
+    let output = table(data)
+    console.log(output)
   })
 }
 initialConnection();

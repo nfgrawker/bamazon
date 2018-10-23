@@ -27,4 +27,4 @@ overhead_costs decimal(11,2),
 primary key (department_id)
 );
 
-  insert into departments (department_name, overhead_costs) VALUES ("Home Goods",10000),("Clothing", 12000),("Grocery", 8000),("Computer",9000),("Home Repair",4000);
+insert into departments (department_name, overhead_costs) VALUES ("Home Goods",10000),("Clothing", 12000),("Grocery", 8000),("Computer",9000),("Home Repair",4000);
